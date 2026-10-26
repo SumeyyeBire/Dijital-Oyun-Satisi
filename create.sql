@@ -1,0 +1,226 @@
+CREATE DATABASE OyunSatisDB;
+GO
+
+USE OyunSatisDB;
+GO
+
+CREATE TABLE Ulke (
+    UlkeID INT IDENTITY(1,1) PRIMARY KEY,
+    Ad NVARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Il (
+    IlID INT IDENTITY(1,1) PRIMARY KEY,
+    UlkeID INT NOT NULL FOREIGN KEY REFERENCES Ulke(UlkeID),
+    Ad NVARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Ilce (
+    IlceID INT IDENTITY(1,1) PRIMARY KEY,
+    IlID INT NOT NULL FOREIGN KEY REFERENCES Il(IlID),
+    Ad NVARCHAR(100) NOT NULL
+);
+
+CREATE TABLE ParaBirimi (
+    ParaBirimiID INT IDENTITY(1,1) PRIMARY KEY,
+    Ad NVARCHAR(50) NOT NULL,
+    Simge NVARCHAR(10) NOT NULL
+);
+
+CREATE TABLE Firma (
+    FirmaID INT IDENTITY(1,1) PRIMARY KEY,
+    Ad NVARCHAR(150) NOT NULL,
+    KurulusTarihi DATE,
+    WebSayfasi NVARCHAR(200),
+    Eposta NVARCHAR(150)
+);
+
+CREATE TABLE Kullanici (
+    KullaniciID INT IDENTITY(1,1) PRIMARY KEY,
+    Eposta NVARCHAR(150) NOT NULL UNIQUE,
+    Sifre NVARCHAR(255) NOT NULL,
+    ProfilAdi NVARCHAR(100) NOT NULL UNIQUE,
+    Ad NVARCHAR(100) NOT NULL,
+    Soyad NVARCHAR(100) NOT NULL,
+    Cinsiyet NVARCHAR(20),
+    DogumTarihi DATE NOT NULL,
+    Yas INT, -- Klasik alan
+    IlceID INT FOREIGN KEY REFERENCES Ilce(IlceID), 
+    Durum NVARCHAR(50), 
+    Cuzdan DECIMAL(18,2) DEFAULT 0.0,
+    KayitTarihi DATETIME DEFAULT GETDATE(),
+    SonGirisTarihi DATETIME,
+    Aciklama NVARCHAR(500),
+    Seviye INT DEFAULT 1,
+    ProfilBaglantisi NVARCHAR(250)
+);
+
+CREATE TABLE Arkadaslik (
+    Kullanici1_ID INT NOT NULL FOREIGN KEY REFERENCES Kullanici(KullaniciID),
+    Kullanici2_ID INT NOT NULL FOREIGN KEY REFERENCES Kullanici(KullaniciID),
+    EklemeTarihi DATETIME DEFAULT GETDATE(),
+    CikmaTarihi DATETIME NULL,
+    PRIMARY KEY (Kullanici1_ID, Kullanici2_ID)
+);
+
+CREATE TABLE Grup (
+    GrupID INT IDENTITY(1,1) PRIMARY KEY,
+    OlusturanKullaniciID INT NOT NULL FOREIGN KEY REFERENCES Kullanici(KullaniciID),
+    Ad NVARCHAR(100) NOT NULL,
+    Aciklama NVARCHAR(500)
+);
+
+CREATE TABLE GrupUye (
+    GrupID INT NOT NULL FOREIGN KEY REFERENCES Grup(GrupID),
+    KullaniciID INT NOT NULL FOREIGN KEY REFERENCES Kullanici(KullaniciID),
+    UyelikGirisTarihi DATETIME DEFAULT GETDATE(),
+    UyelikCikisTarihi DATETIME NULL,
+    PRIMARY KEY (GrupID, KullaniciID, UyelikGirisTarihi) 
+);
+
+CREATE TABLE Tur (
+    TurID INT IDENTITY(1,1) PRIMARY KEY,
+    Ad NVARCHAR(50) NOT NULL 
+);
+
+CREATE TABLE Kategori (
+    KategoriID INT IDENTITY(1,1) PRIMARY KEY,
+    Ad NVARCHAR(50) NOT NULL 
+);
+
+CREATE TABLE Urun (
+    UrunID INT IDENTITY(1,1) PRIMARY KEY,
+    TurID INT NOT NULL FOREIGN KEY REFERENCES Tur(TurID),
+    YapimciFirmaID INT NOT NULL FOREIGN KEY REFERENCES Firma(FirmaID),
+    YayimciFirmaID INT NOT NULL FOREIGN KEY REFERENCES Firma(FirmaID),
+    Ad NVARCHAR(200) NOT NULL,
+    YasSiniri INT,
+    EnAzSistem NVARCHAR(MAX),
+    OnerilenSistem NVARCHAR(MAX),
+    CikisTarihi DATE
+);
+
+CREATE TABLE UrunKategori (
+    UrunID INT NOT NULL FOREIGN KEY REFERENCES Urun(UrunID),
+    KategoriID INT NOT NULL FOREIGN KEY REFERENCES Kategori(KategoriID),
+    PRIMARY KEY (UrunID, KategoriID)
+);
+
+CREATE TABLE Ozellik (
+    OzellikID INT IDENTITY(1,1) PRIMARY KEY,
+    Ad NVARCHAR(100) NOT NULL 
+);
+
+CREATE TABLE UrunOzellik (
+    UrunID INT NOT NULL FOREIGN KEY REFERENCES Urun(UrunID),
+    OzellikID INT NOT NULL FOREIGN KEY REFERENCES Ozellik(OzellikID),
+    PRIMARY KEY (UrunID, OzellikID)
+);
+
+CREATE TABLE UrunFiyat (
+    UrunID INT NOT NULL FOREIGN KEY REFERENCES Urun(UrunID),
+    UlkeID INT NOT NULL FOREIGN KEY REFERENCES Ulke(UlkeID),
+    ParaBirimiID INT NOT NULL FOREIGN KEY REFERENCES ParaBirimi(ParaBirimiID),
+    Fiyat DECIMAL(18,2) NOT NULL,
+    PRIMARY KEY (UrunID, UlkeID) 
+);
+
+CREATE TABLE Sepet (
+    SepetID INT IDENTITY(1,1) PRIMARY KEY,
+    KullaniciID INT NOT NULL UNIQUE FOREIGN KEY REFERENCES Kullanici(KullaniciID)
+);
+
+CREATE TABLE SepetUrun (
+    SepetID INT NOT NULL FOREIGN KEY REFERENCES Sepet(SepetID),
+    UrunID INT NOT NULL FOREIGN KEY REFERENCES Urun(UrunID),
+    EklenmeTarihi DATETIME DEFAULT GETDATE(),
+    PRIMARY KEY (SepetID, UrunID)
+);
+
+CREATE TABLE SatinAlma (
+    SatinAlmaID INT IDENTITY(1,1) PRIMARY KEY,
+    KullaniciID INT NOT NULL FOREIGN KEY REFERENCES Kullanici(KullaniciID),
+    UrunID INT NOT NULL FOREIGN KEY REFERENCES Urun(UrunID),
+    SatinAlmaTarihi DATETIME DEFAULT GETDATE(),
+    Fiyat DECIMAL(18,2) NOT NULL,
+    UrunAnahtari NVARCHAR(100) UNIQUE NOT NULL
+);
+
+CREATE TABLE Basarim (
+    BasarimID INT IDENTITY(1,1) PRIMARY KEY,
+    UrunID INT NOT NULL FOREIGN KEY REFERENCES Urun(UrunID),
+    FirmaID INT NOT NULL FOREIGN KEY REFERENCES Firma(FirmaID),
+    Ad NVARCHAR(150) NOT NULL
+);
+
+CREATE TABLE KullaniciBasarim (
+    KullaniciID INT NOT NULL FOREIGN KEY REFERENCES Kullanici(KullaniciID),
+    BasarimID INT NOT NULL FOREIGN KEY REFERENCES Basarim(BasarimID),
+    Tarih DATETIME DEFAULT GETDATE(),
+    PRIMARY KEY (KullaniciID, BasarimID)
+);
+
+CREATE TABLE Oturum (
+    OturumID INT IDENTITY(1,1) PRIMARY KEY,
+    KullaniciID INT NOT NULL FOREIGN KEY REFERENCES Kullanici(KullaniciID),
+    UrunID INT NOT NULL FOREIGN KEY REFERENCES Urun(UrunID),
+    BaslamaZamani DATETIME NOT NULL,
+    BitisZamani DATETIME NULL,
+    OynamaSuresiDakika INT -- Klasik alan
+);
+
+CREATE TABLE Esya (
+    EsyaID INT IDENTITY(1,1) PRIMARY KEY,
+    UrunID INT NOT NULL FOREIGN KEY REFERENCES Urun(UrunID),
+    FirmaID INT NOT NULL FOREIGN KEY REFERENCES Firma(FirmaID),
+    Ad NVARCHAR(150) NOT NULL,
+    Aciklama NVARCHAR(500),
+    EsyaDurumu NVARCHAR(50) 
+);
+
+CREATE TABLE KullaniciEsya (
+    KullaniciEsyaID INT IDENTITY(1,1) PRIMARY KEY, 
+    KullaniciID INT NOT NULL FOREIGN KEY REFERENCES Kullanici(KullaniciID),
+    EsyaID INT NOT NULL FOREIGN KEY REFERENCES Esya(EsyaID),
+    EldeEdilmeTarihi DATETIME DEFAULT GETDATE(),
+    EldeEdilmeSekli NVARCHAR(50), 
+    PazardaMi BIT DEFAULT 0,
+    TalepEdilenFiyat DECIMAL(18,2) NULL,
+    SatildiMi BIT DEFAULT 0,
+    SatisTarihi DATETIME NULL,
+    SatisFiyati DECIMAL(18,2) NULL,
+    AlanKullaniciID INT NULL FOREIGN KEY REFERENCES Kullanici(KullaniciID) 
+);
+
+CREATE TABLE Teklif (
+    TeklifID INT IDENTITY(1,1) PRIMARY KEY,
+    KullaniciEsyaID INT NOT NULL FOREIGN KEY REFERENCES KullaniciEsya(KullaniciEsyaID), 
+    TeklifVerenKullaniciID INT NOT NULL FOREIGN KEY REFERENCES Kullanici(KullaniciID),
+    TeklifZamani DATETIME DEFAULT GETDATE(),
+    Ucret DECIMAL(18,2) NOT NULL,
+    Durum NVARCHAR(50) DEFAULT 'Cevap Bekleniyor' 
+);
+
+CREATE TABLE IstekListesi (
+    ListeID INT IDENTITY(1,1) PRIMARY KEY,
+    KullaniciID INT NOT NULL FOREIGN KEY REFERENCES Kullanici(KullaniciID)
+);
+
+CREATE TABLE IstekListesiUrun (
+    ListeID INT NOT NULL FOREIGN KEY REFERENCES IstekListesi(ListeID),
+    UrunID INT NOT NULL FOREIGN KEY REFERENCES Urun(UrunID),
+    EklenmeTarihi DATETIME DEFAULT GETDATE(),
+    SiraNo INT NOT NULL, 
+    PRIMARY KEY (ListeID, UrunID)
+);
+
+CREATE TABLE Yorum (
+    YorumID INT IDENTITY(1,1) PRIMARY KEY,
+    KullaniciID INT NOT NULL FOREIGN KEY REFERENCES Kullanici(KullaniciID),
+    UrunID INT NOT NULL FOREIGN KEY REFERENCES Urun(UrunID),
+    Metin NVARCHAR(MAX) NOT NULL,
+    Tarih DATETIME DEFAULT GETDATE(),
+    Puan TINYINT CHECK (Puan >= 1 AND Puan <= 10), 
+    Tur NVARCHAR(20), 
+    Dil NVARCHAR(50)
+);
